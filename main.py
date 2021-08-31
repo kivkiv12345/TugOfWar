@@ -1,10 +1,8 @@
-import os
 from time import sleep
+from subprocess import call
 from multiprocessing.managers import ValueProxy
-from multiprocessing import Queue, Process, Pipe, Event, Value, Manager
 from multiprocessing.synchronize import Event as EventHint
-
-clear_console = lambda: os.system('clear')
+from multiprocessing import Process, Event, Manager
 
 WIN_NUMBER = 100
 SLEEPTIME = 0.05
@@ -22,9 +20,8 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-def tug(tug_progress: ValueProxy, change: int, not_done_flag: EventHint = False):
-    while not_done_flag:
-        #print('Gustav was here')
+def tug(tug_progress: ValueProxy, change: int, done_flag: EventHint = False):
+    while not done_flag.is_set():
         tug_progress.set(tug_progress.get() + change)
         sleep(SLEEPTIME)
 
@@ -32,30 +29,30 @@ def tug(tug_progress: ValueProxy, change: int, not_done_flag: EventHint = False)
 def main():
 
     progress = Manager().Value('i', WIN_NUMBER // 2)
-    not_done_flag = Event()
+    done_flag = Event()
 
-    tug_right = Process(target=tug, args=(progress, 1, not_done_flag))
-    tug_left = Process(target=tug, args=(progress, -1, not_done_flag))
+    tug_right = Process(target=tug, args=(progress, 1, done_flag))
+    tug_left = Process(target=tug, args=(progress, -1, done_flag))
 
     tug_right.start()
     tug_left.start()
 
-    while abs(current_progress := progress.get()) < WIN_NUMBER:
-        #clear_console()
+    while (current_progress := progress.get()) in range(WIN_NUMBER):
         tug_string = bcolors.FAIL + '=' * current_progress
         tug_string += bcolors.OKBLUE + '0'
         tug_string += bcolors.OKGREEN + '=' * (WIN_NUMBER - current_progress)
         print(tug_string)
         sleep(SLEEPTIME)
+        #call(['clear'])  # Clears the console on UNIX systems; duh!
 
     print(bcolors.BOLD)
 
-    if current_progress > 100:
-        print("left side won!")
+    if current_progress >= WIN_NUMBER:
+        print(bcolors.OKGREEN + "Right side won!")
     else:
-        print("Right side won!")
+        print(bcolors.FAIL + "Left side won!")
 
-    not_done_flag.set()
+    done_flag.set()
 
     tug_right.join()
     tug_left.join()
