@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from time import sleep
 #from subprocess import call
 from multiprocessing.managers import ValueProxy
