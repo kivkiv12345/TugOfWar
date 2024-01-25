@@ -89,4 +89,5 @@ if __name__ == '__main__':
             main()
             sleep(3)
     except KeyboardInterrupt:
+        print(bcolors.ENDC, end='')
         pass  # Suppress the traceback.
